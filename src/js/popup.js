@@ -1,18 +1,9 @@
-// var bgpage = chrome.extension.getBackgroundPage();
-//
-// import util from "util"
-//
-// // console.log('bgpage: '+util.inspect(bgpage, {depth: null}))
-//
-// if(bgpage) {
-//   console.log('foo:'+bgpage.foo);
-//   // bgpage.foo());
-// }
-// else console.log('bgpage notfound')
 
-chrome.extension.getBackgroundPage(function (backgroundPage) {
-    console.log(backgroundPage.foo); // Displays "mooh".
+chrome.runtime.sendMessage({msg: "hello"}, function(response) {
+  console.log(response.msg);
 });
+
+// console.log('foo:'+foo);
 
 // import "../css/popup.css";
 //
@@ -46,18 +37,3 @@ chrome.extension.getBackgroundPage(function (backgroundPage) {
 //         throw e
 //       })
 //hello();
-
-// var bgWin = chrome.extension.getBackgroundPage();
-// console.log(bgWin.backgroundFunction());
-
-// function onGot(page) {
-//   page.foo();
-// }
-//
-// function onError(error) {
-//   console.log(`Error: ${error}`);
-// }
-//
-// var getting = chrome.extension.getBackgroundPage();
-// // getting.then(onGot, onError);
-// getting.foo();
