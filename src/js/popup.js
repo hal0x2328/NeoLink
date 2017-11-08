@@ -1,39 +1,79 @@
 
-chrome.runtime.sendMessage({msg: "hello"}, function(response) {
-  console.log(response.msg);
+import "../css/popup.css";
+
+import * as mainNav from "../html/main_nav.html"
+import * as txsHtml from "../html/transactions.html"
+import * as balanceHtml from "../html/balance.html"
+import * as loginHtml from "../html/login.html"
+import * as createWalletHtml from "../html/create_wallet.html"
+import * as importWalletHtml from "../html/import_wallet.html"
+import * as exportWalletHtml from "../html/export_wallet.html"
+
+var curNav = mainNav
+
+document.getElementById("nav").innerHTML = curNav
+
+// chrome.runtime.sendMessage({msg: "getTransactionHistory"}, function(response) {
+//   console.log(response.msg);
+// });
+
+// chrome.runtime.sendMessage({msg: "getBalance"}, function(response) {
+//   console.log(response.msg);
+// });
+
+document.getElementById('txsNav').addEventListener('click', () => {
+  document.getElementById("content").innerHTML = txsHtml
+
+  document.getElementById('getTxs').addEventListener('click', () => {
+    chrome.runtime.sendMessage({msg: "getTransactionHistory"}, function(response) {
+      console.log(response.msg)
+      var txs = response.msg
+      var content = "";
+      for (let i = 0; i < txs.length; i++){
+        if (txs[i].neo_sent === true){
+          console.log("NEO: " + txs[i].txid)
+          content += "<li>NEO: "+txs[i].txid+"</li>"
+        }
+        if (txs[i].gas_sent === true){
+          console.log("GAS: " + txs[i].txid)
+          content += "<li>GAS: "+txs[i].txid+"</li>"
+        }
+      }
+      document.getElementById("modalContent").innerHTML = "<ul>" + content + "</ul>"
+    });
+  });
 });
 
-// console.log('foo:'+foo);
+document.getElementById('balanceNav').addEventListener('click', () => {
+  document.getElementById("content").innerHTML = balanceHtml
 
-// import "../css/popup.css";
-//
-// //import neon from "neon-js"
-// import * as neon from 'neon-js'
-// var address='AJXixUHZZsSZTrrP7ZpRqKbY2HzRawf8cB';
-//
-// neon.getTransactionHistory('MainNet', address)
-//   .then((transactions) => {
-//     let txs = [];
-//     for (let i = 0; i < transactions.length; i++){
-//       if (transactions[i].neo_sent === true){
-//         console.log("NEO: " + transactions[i].txid);
-//       }
-//       if (transactions[i].gas_sent === true){
-//         console.log("GAS: " + transactions[i].txid);
-//       }
-//     }}).catch((e) => {
-//         console.log(e)
-//         throw e
-//       })
-//
-// neon.getBalance('MainNet', address)
-//       .then((response) => {
-//         document.getElementById("content").innerHTML = "<h3>" +
-// 		address + "</h3><br>NEO Balance: " + response.NEO.balance +
-// 		"<br>GAS: " + response.GAS.balance;
-// 	console.log(address +"\nNEO Balance: " + response.NEO.balance + "\nGas Balance: " + response.GAS.balance);
-//       }).catch((e) => {
-//         console.log(e)
-//         throw e
-//       })
-//hello();
+  document.getElementById('getBalance').addEventListener('click', () => {
+    chrome.runtime.sendMessage({msg: "getBalance"}, function(response) {
+      console.log(response)
+      // document.getElementById("content").innerHTML = "<h3>" + response.msg + "</h3>";
+      document.getElementById("modalContent").innerHTML = "<b>" +
+  		response.address + "</b><br>NEO Balance: " + response.bals.NEO.balance +
+  		"<br>GAS: " + response.bals.GAS.balance
+    });
+  });
+});
+
+document.getElementById('loginNav').addEventListener('click', () => {
+  document.getElementById("content").innerHTML = loginHtml
+
+});
+
+document.getElementById('createWalletNav').addEventListener('click', () => {
+  document.getElementById("content").innerHTML = createWalletHtml
+
+});
+
+document.getElementById('importWalletNav').addEventListener('click', () => {
+  document.getElementById("content").innerHTML = importWalletHtml
+
+});
+
+document.getElementById('exportWalletNav').addEventListener('click', () => {
+  document.getElementById("content").innerHTML = exportWalletHtml
+
+});
