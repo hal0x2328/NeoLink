@@ -3,8 +3,9 @@ import '../img/icon-34.png'
 
 import * as neon from 'neon-js'
 
-var address='AJXixUHZZsSZTrrP7ZpRqKbY2HzRawf8cB'
-var network='MainNet'
+// var address='AJXixUHZZsSZTrrP7ZpRqKbY2HzRawf8cB'
+var network = 'MainNet'
+var loggedIn = false
 
 console.log("in background")
 
@@ -29,11 +30,17 @@ chrome.runtime.onMessage.addListener(
 
     switch(request.msg)
     {
+      case "getState":
+        sendResponse({'loggedIn': loggedIn})
+        break;
       case "createWallet":
         break;
       case "exportWallet":
         break;
-      case "login":
+      case "loginWif":
+        loginWif((e, account, loggedIn) => {
+          sendResponse({'account': account, 'error': e, 'loggedIn': loggedIn})
+        }, request.encryptedWif, request.passphrase)
         break;
       case "send":
         break;
@@ -41,16 +48,13 @@ chrome.runtime.onMessage.addListener(
         break;
       case "getBalance":
         getBalance((e, res, address) => {
-          if(e) console.log(e)
-          else
-            sendResponse({bals: res, address: address})
-        })
+          sendResponse({'bals': res, 'address': address, 'error': e})
+        }, request.args)
         break;
       case "getTransactionHistory":
         getTransactionHistory((e, txs) => {
-          if(e) console.log(e)
-          else sendResponse({msg: txs})
-        })
+          sendResponse({'msg': txs, 'error': e})
+        }, request.args)
         break;
     }
     return true;
@@ -58,33 +62,52 @@ chrome.runtime.onMessage.addListener(
 
 
 
-function getTransactionHistory (callback) {
+function getTransactionHistory (callback, address) {
   neon.getTransactionHistory(network, address)
     .then((transactions) => {
-      // for (let i = 0; i < transactions.length; i++){
-      //   if (transactions[i].neo_sent === true){
-      //     console.log("NEO: " + transactions[i].txid)
-      //   }
-      //   if (transactions[i].gas_sent === true){
-      //     console.log("GAS: " + transactions[i].txid)
-      //   }
-      // }
       callback(null, transactions)
-    }).catch((e) => {
-      console.log(e)
-      callback(e, null)
+    })
+    .catch((e) => {
+      console.log('caught e:'+e)
+      callback(e)
       throw e
     })
 }
 
-function getBalance (callback) {
+function getBalance (callback, address) {
   neon.getBalance(network, address)
     .then((response) => {
       console.log(address +"\nNEO Balance: " + response.NEO.balance + "\nGas Balance: " + response.GAS.balance);
       callback(null, response, address)
     }).catch((e) => {
       console.log(e)
-      callback(e, null)
+      callback(e)
       throw e
     })
+}
+
+
+function loginWif (callback, encryptedWif, passphrase) {
+  console.log('bg word: '+passphrase)
+  neon.decryptWIF(encryptedWif, passphrase)
+    .then((wif) => {
+      console.log('bg wif: '+wif)
+      loggedIn = true
+      // returns { privateKey, publicKeyEncoded, publicKeyHash, programHash, address }
+      var account = neon.getAccountFromWIFKey(wif)
+      callback(null, account, loggedIn)
+    }).catch((e) => {
+      console.log(e)
+      callback(e)
+      throw e
+    })
+  // neon.getBalance(network, address)
+  //   .then((response) => {
+  //     console.log(address +"\nNEO Balance: " + response.NEO.balance + "\nGas Balance: " + response.GAS.balance);
+  //     callback(null, response, address)
+  //   }).catch((e) => {
+  //     console.log(e)
+  //     callback(e, null)
+  //     throw e
+  //   })
   }
