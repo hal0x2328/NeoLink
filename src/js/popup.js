@@ -120,7 +120,6 @@ document.getElementById('sendNav').addEventListener('click', () => {
       chrome.runtime.sendMessage({'msg': 'send', 'tx': tx}, function(response) {
         if(response.error) {
           console.log('error: '+response.error)
-          console.log('error: '+util.inspect(response.error, {depth: null}))
           document.getElementById("modalContent").innerHTML = '<br>error: ' + response.error
         } else {
           console.log(response.msg)
