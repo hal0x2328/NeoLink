@@ -172,22 +172,13 @@ function send (callback, tx) {
     })
 }
 
-/**
- * Invoke contract operation
- * @param {string} net - 'MainNet' or 'TestNet'.
- * @param {string} operation - i.e., 'mintTokens'
- * @param {string} fromWif - The WIF key of the originating address.
- * @param {assetType} amount - 'Neo' or 'Gas'
- * @param {assetAmount} amount - The amount of neo or gas to send to SC.
- * @param {gasCost} amount - The Gas to send as SC fee.
- * @return {Promise<Response>} RPC Response
- */
+
 function invokeContract(callback, tx) {
   const assetType = tx.type === ASSETS_LABELS.NEO ? ASSETS.NEO : ASSETS.GAS
   console.log('invoking contract')
-  var gasCost = 0.001
+  var gasCost = '0.001'
 
-  neon.invokeContract(state.network, tx.operation, tx.args, tx.scriptHash, state.wif, tx.type, tx.amount, gasCost)
+  neon.invokeContract(state.network, tx.operation, tx.args, tx.scriptHash, state.wif, assetType, tx.amount, gasCost)
     .then((response) => {
       if (response.result === undefined || response.result === false) {
         callback(null, 'Transaction failed: '+response.result)
