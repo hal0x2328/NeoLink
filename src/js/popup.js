@@ -27,6 +27,18 @@ document.getElementById("nav").innerHTML = curNavHtml
 
 if (network) document.getElementById("networkStatus").innerHTML = network
 
+if(!loggedIn) {
+    // document.getElementById("loginNav").innerHTML = 'Login'
+    document.getElementById("content").innerHTML = loginHtml
+    addLoginButtonEvent()
+} else {
+    // document.getElementById("loginNav").innerHTML = 'Log Out'
+    document.getElementById("content").innerHTML = loggedInHtml
+    document.getElementById("loginModalContent").innerHTML = modalContentCache
+    addLogoutButtonEvent()
+}
+
+
 function getBackgroundState () {
   chrome.runtime.sendMessage({'msg': 'getState'}, function(response) {
     loggedIn = response.loggedIn
@@ -100,7 +112,7 @@ document.getElementById('sendNav').addEventListener('click', () => {
   setCurNavLocation('Send')
 
   if (!loggedIn) {
-    document.getElementById("content").innerHTML = "<h3>Please login</h3>"
+    document.getElementById("content").innerHTML = "<div class='content'><h3>Please login</h3></div>"
   }
   else {
     document.getElementById("content").innerHTML = sendHtml

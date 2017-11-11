@@ -148,7 +148,7 @@ function send (callback, tx) {
   const assetName = tx.type === ASSETS_LABELS.NEO ? ASSETS.NEO : ASSETS.GAS
   let sendAsset = {}
   sendAsset[assetName] = tx.amount
-  console.log('bg send: '+ tx.type + ' ' + tx.amount + ' ' + tx.address + ' ' + state.wif)
+  console.log('bg send: assetName:' + assetName + ' tx.type:' + tx.type + ' amt:' + tx.amount + ' addr:' + tx.address + ' state:' + state.wif)
   // export const doSendAsset = (net, toAddress, fromWif, assetAmounts) => {
   neon.doSendAsset(state.network, tx.address, state.wif, sendAsset)
     .then((response) => {
