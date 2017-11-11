@@ -2,15 +2,16 @@
 import "../css/popup.css"
 import util from "util"
 
-import * as mainNav from "../html/main_nav.html"
+import * as mainNav from "../html/mainNav.html"
 import * as sendHtml from "../html/send.html"
+import * as invokeContractHtml from "../html/invokeContract.html"
 import * as txsHtml from "../html/transactions.html"
 import * as balanceHtml from "../html/balance.html"
 import * as loginHtml from "../html/login.html"
 import * as loggedInHtml from "../html/loggedIn.html"
-import * as createWalletHtml from "../html/create_wallet.html"
-import * as importWalletHtml from "../html/import_wallet.html"
-import * as exportWalletHtml from "../html/export_wallet.html"
+import * as createWalletHtml from "../html/createWallet.html"
+import * as importWalletHtml from "../html/importWallet.html"
+import * as exportWalletHtml from "../html/exportWallet.html"
 import * as configHtml from "../html/config.html"
 
 var curNavHtml = mainNav
@@ -76,6 +77,7 @@ function getBackgroundState () {
       if (useLoginAddress) document.getElementById('configUseLoggedInAddress').checked = true
       else document.getElementById('configUseLoggedInAddress').checked = false
     }
+    // callback()
   })
 }
 
@@ -90,6 +92,11 @@ function setBackgroundState () {
   chrome.runtime.sendMessage({'msg': 'setState', 'state': state}, function(response) {
     console.log('setting state')
   })
+}
+
+function setCurNavLocation (nav) {
+  curNavLocation = nav
+  setBackgroundState()
 }
 
 document.getElementById('homeNav').addEventListener('click', () => {
@@ -130,6 +137,49 @@ document.getElementById('sendNav').addEventListener('click', () => {
       var tx = {'address': address, 'amount': amount, 'type': type }
 
       chrome.runtime.sendMessage({'msg': 'send', 'tx': tx}, function(response) {
+        if(response.error) {
+          console.log('error: '+response.error)
+          document.getElementById("modalContent").innerHTML = '<br>error: ' + response.error
+        } else {
+          console.log(response.msg)
+
+          var content = response.msg
+          document.getElementById('modalContent').innerHTML = content
+          // document.getElementById("modalContent").innerHTML = "<ul>" + content + "</ul>"
+        }
+      })
+    })
+  }
+})
+
+document.getElementById('invokeNav').addEventListener('click', () => {
+  setCurNavLocation('Invoke Contract')
+
+  if (!loggedIn) {
+    document.getElementById("content").innerHTML = "<div class='content'><h3>Please login</h3></div>"
+  }
+  else {
+    document.getElementById("content").innerHTML = invokeContractHtml
+
+    document.getElementById('invokeContractButton').addEventListener('click', () => {
+      var operation = document.getElementById("operation").value
+      console.log('operation:'+operation)
+
+      var args = document.getElementById("args").value
+      console.log('args:'+args)
+
+      var scriptHash = document.getElementById("scriptHash").value
+      console.log('scriptHash:'+scriptHash)
+
+      var amount = document.getElementById("sendAmount").value
+      console.log('amount:'+amount)
+
+      var type = document.getElementById("assetType").value
+      console.log('type:'+type)
+
+      var tx = {'operation': operation, 'args': args, 'scriptHash': scriptHash, 'amount': amount, 'type': type }
+
+      chrome.runtime.sendMessage({'msg': 'invoke', 'tx': tx}, function(response) {
         if(response.error) {
           console.log('error: '+response.error)
           document.getElementById("modalContent").innerHTML = '<br>error: ' + response.error
@@ -303,9 +353,3 @@ document.getElementById('configNav').addEventListener('click', () => {
     setBackgroundState()
   })
 })
-
-
-function setCurNavLocation (nav) {
-  curNavLocation = nav
-  setBackgroundState()
-}

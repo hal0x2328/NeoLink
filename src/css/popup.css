@@ -54,8 +54,9 @@ input, textarea {
     color: #cccccc;
 }
 .vertical-menu {
-    width: 200px; /* Set a width if you like */
+    width: 100px; /* Set a width if you like */
     position: fixed;
+    min-height: 240px;
 }
 
 .vertical-menu button {
@@ -78,7 +79,11 @@ input, textarea {
 .content {
     margin-left:120px;
     padding:1px 16px;
-    height:220px;
+    height:240px;
+    min-height: 220px;
+    max-width:200px;
+    word-break:break-all;
 }
 
 button:focus {outline:0;}
+input:focus {outline:0;}

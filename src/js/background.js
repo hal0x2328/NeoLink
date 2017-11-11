@@ -84,6 +84,11 @@ chrome.runtime.onMessage.addListener(
           sendResponse({'msg': res, 'error': e})
         }, request.tx)
         break;
+      case "invoke":
+        invokeContract((e, res, tx) => {
+          sendResponse({'msg': res, 'error': e})
+        }, request.tx)
+        break;
       case "claim":
         break;
       case "getBalance":
@@ -164,6 +169,37 @@ function send (callback, tx) {
       // console.log('error: '+util.inspect(e, {depth: null}))
       callback(''+e)      // throw e
       // console.log('error: '+util.inspect(e, {depth: null}))
+    })
+}
 
+/**
+ * Invoke contract operation
+ * @param {string} net - 'MainNet' or 'TestNet'.
+ * @param {string} operation - i.e., 'mintTokens'
+ * @param {string} fromWif - The WIF key of the originating address.
+ * @param {assetType} amount - 'Neo' or 'Gas'
+ * @param {assetAmount} amount - The amount of neo or gas to send to SC.
+ * @param {gasCost} amount - The Gas to send as SC fee.
+ * @return {Promise<Response>} RPC Response
+ */
+function invokeContract(callback, tx) {
+  const assetType = tx.type === ASSETS_LABELS.NEO ? ASSETS.NEO : ASSETS.GAS
+  console.log('invoking contract')
+  var gasCost = 0.001
+
+  neon.invokeContract(state.network, tx.operation, tx.args, tx.scriptHash, state.wif, tx.type, tx.amount, gasCost)
+    .then((response) => {
+      if (response.result === undefined || response.result === false) {
+        callback(null, 'Transaction failed: '+response.result)
+        console.log('bg send failed: '+ response.result)
+      } else {
+        callback(null, 'Transaction succeeded: '+response.result)
+        console.log('bg send succeeded: '+ response.result)
+      }
+    }).catch((e) => {
+      console.log('bg send caught exception: '+e)
+      // console.log('error: '+util.inspect(e, {depth: null}))
+      callback(''+e)      // throw e
+      // console.log('error: '+util.inspect(e, {depth: null}))
     })
 }
