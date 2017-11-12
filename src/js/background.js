@@ -52,6 +52,9 @@ chrome.runtime.onMessage.addListener(
 
     switch(request.msg)
     {
+      case "contentInit":
+        sendResponse({'msg': 'bg received message!'})
+      break;
       case "getState":
         // sendResponse({'loggedIn': state.loggedIn, 'modalContentCache': state.modalContentCache})
         sendResponse(state)
@@ -84,8 +87,8 @@ chrome.runtime.onMessage.addListener(
           sendResponse({'msg': res, 'error': e})
         }, request.tx)
         break;
-      case "invoke":
-        invokeContract((e, res, tx) => {
+      case "testInvoke":
+        testInvokeContract((e, res, tx) => {
           sendResponse({'msg': res, 'error': e})
         }, request.tx)
         break;
@@ -173,24 +176,39 @@ function send (callback, tx) {
 }
 
 
-function invokeContract(callback, tx) {
+function String2Hex(tmp) {
+    var str = '';
+    for(var i = 0; i < tmp.length; i++) {
+        str += tmp[i].charCodeAt(0).toString(16);
+    }
+    return str;
+}
+
+function testInvokeContract(callback, tx) {
   const assetType = tx.type === ASSETS_LABELS.NEO ? ASSETS.NEO : ASSETS.GAS
   console.log('invoking contract')
-  var gasCost = '0.001'
+  var gasCost = 0.001
+  var operation = tx.operation
+  var args = [{'type': 7, 'value': tx.args}]
 
-  neon.invokeContract(state.network, tx.operation, tx.args, tx.scriptHash, state.wif, assetType, tx.amount, gasCost)
+  console.log('invoke wif: ' +state.wif)
+  console.log('invoke network: ' +state.network)
+  console.log('invoke scriptHash: ' +tx.scriptHash)
+  console.log('invoke assetType: ' +assetType)
+  console.log('invoke amount: ' +tx.amount)
+  console.log('invoke operation: ' +operation)
+  console.log('args: '+util.inspect(args,{depth:null}))
+
+  neon.testInvokeContract(state.network, operation, args, tx.scriptHash, state.wif, assetType, tx.amount, 0)
     .then((response) => {
-      if (response.result === undefined || response.result === false) {
-        callback(null, 'Transaction failed: '+response.result)
-        console.log('bg send failed: '+ response.result)
-      } else {
-        callback(null, 'Transaction succeeded: '+response.result)
-        console.log('bg send succeeded: '+ response.result)
-      }
+      callback(null, 'Transaction result: '+
+        'state: ' + response.result.state +
+        ' gas_consumed: ' + response.result.gas_consumed +
+        ' stack: ' + util.inspect(response.result, {depth: null}))
+      console.log('bg invoke failed: '+ util.inspect(response.result, {depth: null}))
     }).catch((e) => {
-      console.log('bg send caught exception: '+e)
+      console.log('bg invoke caught exception: '+e)
       // console.log('error: '+util.inspect(e, {depth: null}))
       callback(''+e)      // throw e
-      // console.log('error: '+util.inspect(e, {depth: null}))
     })
 }

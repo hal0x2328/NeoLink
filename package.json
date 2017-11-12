@@ -1,6 +1,6 @@
 {
   "name": "NeoLink",
-  "version": "0.0.1",
+  "version": "0.1.28",
   "description": "A Chrome Extension Wallet for the Neo Cryptocurrency",
   "scripts": {
     "build": "node utils/build.js",

@@ -4,7 +4,7 @@ import util from "util"
 
 import * as mainNav from "../html/mainNav.html"
 import * as sendHtml from "../html/send.html"
-import * as invokeContractHtml from "../html/invokeContract.html"
+import * as testInvokeContractHtml from "../html/testInvokeContract.html"
 import * as txsHtml from "../html/transactions.html"
 import * as balanceHtml from "../html/balance.html"
 import * as loginHtml from "../html/login.html"
@@ -152,14 +152,14 @@ document.getElementById('sendNav').addEventListener('click', () => {
   }
 })
 
-document.getElementById('invokeNav').addEventListener('click', () => {
-  setCurNavLocation('Invoke Contract')
+document.getElementById('testInvokeNav').addEventListener('click', () => {
+  setCurNavLocation('Test Invoke Contract')
 
   if (!loggedIn) {
     document.getElementById("content").innerHTML = "<div class='content'><h3>Please login</h3></div>"
   }
   else {
-    document.getElementById("content").innerHTML = invokeContractHtml
+    document.getElementById("content").innerHTML = testInvokeContractHtml
 
     document.getElementById('invokeContractButton').addEventListener('click', () => {
       var operation = document.getElementById("operation").value
@@ -179,7 +179,7 @@ document.getElementById('invokeNav').addEventListener('click', () => {
 
       var tx = {'operation': operation, 'args': args, 'scriptHash': scriptHash, 'amount': amount, 'type': type }
 
-      chrome.runtime.sendMessage({'msg': 'invoke', 'tx': tx}, function(response) {
+      chrome.runtime.sendMessage({'msg': 'testInvoke', 'tx': tx}, function(response) {
         if(response.error) {
           console.log('error: '+response.error)
           document.getElementById("modalContent").innerHTML = '<br>error: ' + response.error
