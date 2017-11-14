@@ -88,14 +88,14 @@ chrome.runtime.onMessage.addListener(
         }, request.tx)
         break;
       case "testInvoke": // NOTE: does NOT require extension is logged in
-        sendInvokeContract((e, res, tx) => {
+        testInvokeContract((e, res, tx) => {
           sendResponse({'msg': res, 'error': e})
         }, request.tx)
         break;
       case "sendInvoke": // NOTE: DOES require extension is logged in
-        // sendInvokeContract((e, res, tx) => {
-        //   sendResponse({'msg': res, 'error': e})
-        // }, request.tx)
+        sendInvokeContract((e, res, tx) => {
+          sendResponse({'msg': res, 'error': e})
+        }, request.tx)
         break;
       case "claim":
         break;
@@ -194,23 +194,38 @@ function testInvokeContract(callback, tx) {
   console.log('test invoking contract')
   var gasCost = 0.001
   var operation = tx.operation
-  var args = [{'type': 7, 'value': tx.args}]
+  // var args = [{'type': 7, 'value': tx.args}]
+  var args = []
+  tx.args.forEach((arg) => {
+    if (arg !== '') args.push({'type': 7, 'value': arg})
+  })
 
   console.log('invoke wif: ' +state.wif)
   console.log('invoke network: ' +state.network)
   console.log('invoke scriptHash: ' +tx.scriptHash)
-  console.log('invoke assetType: ' +assetType)
-  console.log('invoke amount: ' +tx.amount)
   console.log('invoke operation: ' +operation)
   console.log('args: '+util.inspect(args,{depth:null}))
 
   neon.testInvokeContract(state.network, operation, args, tx.scriptHash)
     .then((response) => {
-      callback(null, 'Transaction result: '+
-        'state: ' + response.result.state +
-        ' gas_consumed: ' + response.result.gas_consumed +
-        ' stack: ' + util.inspect(response.result, {depth: null}))
-      console.log('bg test invoke failed: '+ util.inspect(response.result, {depth: null}))
+      if (response.result.stack[0].type === 'ByteArray' && response.result.stack[0].value) {
+        var endian = response.result.stack[0].value
+
+        var r = parseInt('0x'+endian.match(/../g).reverse().join(''));
+        console.log('price result: '+r)
+
+        callback(null, 'SC Return Value: ' + r + ' Transaction result: '+
+          'state: ' + response.result.state +
+          ' gas_consumed: ' + response.result.gas_consumed +
+          ' stack: ' + util.inspect(response.result, {depth: null}))
+        console.log('bg test invoke succeeded: '+ util.inspect(response.result, {depth: null}))
+      } else {
+        callback(null, 'Transaction result: '+
+          'state: ' + response.result.state +
+          ' gas_consumed: ' + response.result.gas_consumed +
+          ' stack: ' + util.inspect(response.result, {depth: null}))
+        console.log('bg test invoke failed: '+ util.inspect(response.result, {depth: null}))
+      }
     }).catch((e) => {
       console.log('bg test invoke caught exception: '+e)
       // console.log('error: '+util.inspect(e, {depth: null}))
@@ -223,7 +238,12 @@ function sendInvokeContract(callback, tx) {
   console.log('invoking contract')
   var gasCost = 0.001
   var operation = tx.operation
-  var args = [String2Hex(tx.args), String2Hex('1')]
+  // var args = [String2Hex(tx.args), String2Hex('1')]
+  // var args = [String2Hex(tx.args[0]), String2Hex(tx.args[1])]
+  var args = []
+  tx.args.forEach((arg) => {
+    if (arg !== '') args.push(String2Hex(arg))
+  })
 
   console.log('invoke wif: ' +state.wif)
   console.log('invoke network: ' +state.network)
@@ -236,7 +256,7 @@ function sendInvokeContract(callback, tx) {
   neon.sendInvokeContract(state.network, operation, args, tx.scriptHash, state.wif, assetType, tx.amount, 0)
     .then((response) => {
       console.log('bg send invoke succeeded: '+util.inspect(response,{depth:null}))
-      callback('Transaction result: '+util.inspect(response,{depth:null}))
+      callback(null, 'Transaction result: '+util.inspect(response,{depth:null}))
       // callback(null, 'Transaction result: '+
       //   'state: ' + response.result.state +
       //   ' gas_consumed: ' + response.result.gas_consumed +

@@ -1,10 +1,16 @@
 <div class="content">
-<h3> Test Invoke Contract </h3>
+<h3> Send Invoke Contract </h3>
 Operation: <br><input type='text' id='operation'/><br>
 Argument One: <br><input type='text' id='arg1'/><br>
 Argument Two (optional): <br><input type='text' id='arg2'/><br>
 Script Hash: <br><input type='text' id='scriptHash'/><br>
-
+Amount: <br><input type='text' id='sendAmount'/><br>
+Type: <br>
+<!-- <input type='text' id='sendType'/> -->
+<select id='assetType'>
+  <option value="Neo">Neo</option>
+  <option value="Gas" selected="selected">Gas</option>
+</select>
 <br><br>
 <button id="invokeContractButton">Invoke</button>
 <br><br>

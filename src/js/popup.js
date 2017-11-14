@@ -5,6 +5,7 @@ import util from "util"
 import * as mainNav from "../html/mainNav.html"
 import * as sendHtml from "../html/send.html"
 import * as testInvokeContractHtml from "../html/testInvokeContract.html"
+import * as sendInvokeContractHtml from "../html/sendInvokeContract.html"
 import * as txsHtml from "../html/transactions.html"
 import * as balanceHtml from "../html/balance.html"
 import * as loginHtml from "../html/login.html"
@@ -165,8 +166,57 @@ document.getElementById('testInvokeNav').addEventListener('click', () => {
       var operation = document.getElementById("operation").value
       console.log('operation:'+operation)
 
-      var args = document.getElementById("args").value
-      console.log('args:'+args)
+      var arg1 = document.getElementById("arg1").value
+      console.log('arg1:'+arg1)
+
+      var arg2 = document.getElementById("arg2").value
+      console.log('arg2:'+arg2)
+
+      var args = [arg1, arg2]
+      console.log('args:'+arg2)
+
+      var scriptHash = document.getElementById("scriptHash").value
+      console.log('scriptHash:'+scriptHash)
+
+      var tx = { 'operation': operation, 'args': args, 'scriptHash': scriptHash }
+
+      chrome.runtime.sendMessage({'msg': 'testInvoke', 'tx': tx}, function(response) {
+        if(response.error) {
+          console.log('error: '+response.error)
+          document.getElementById("modalContent").innerHTML = '<br>error: ' + response.error
+        } else {
+          console.log(response.msg)
+
+          var content = response.msg
+          document.getElementById('modalContent').innerHTML = content
+          // document.getElementById("modalContent").innerHTML = "<ul>" + content + "</ul>"
+        }
+      })
+    })
+  }
+})
+
+document.getElementById('sendInvokeNav').addEventListener('click', () => {
+  setCurNavLocation('Send Invoke Contract')
+
+  if (!loggedIn) {
+    document.getElementById("content").innerHTML = "<div class='content'><h3>Please login</h3></div>"
+  }
+  else {
+    document.getElementById("content").innerHTML = sendInvokeContractHtml
+
+    document.getElementById('invokeContractButton').addEventListener('click', () => {
+      var operation = document.getElementById("operation").value
+      console.log('operation:'+operation)
+
+      var arg1 = document.getElementById("arg1").value
+      console.log('arg1:'+arg1)
+
+      var arg2 = document.getElementById("arg2").value
+      console.log('arg2:'+arg2)
+
+      var args = [arg1, arg2]
+      console.log('args:'+arg2)
 
       var scriptHash = document.getElementById("scriptHash").value
       console.log('scriptHash:'+scriptHash)
@@ -179,7 +229,7 @@ document.getElementById('testInvokeNav').addEventListener('click', () => {
 
       var tx = {'operation': operation, 'args': args, 'scriptHash': scriptHash, 'amount': amount, 'type': type }
 
-      chrome.runtime.sendMessage({'msg': 'testInvoke', 'tx': tx}, function(response) {
+      chrome.runtime.sendMessage({'msg': 'sendInvoke', 'tx': tx}, function(response) {
         if(response.error) {
           console.log('error: '+response.error)
           document.getElementById("modalContent").innerHTML = '<br>error: ' + response.error
