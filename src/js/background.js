@@ -14,7 +14,8 @@ var state = {
   wif: null,
   useLoginAddress: false,
   address: null,
-  curNavLocation: 'Home'
+  curNavLocation: 'Home',
+  formCache: {}
 }
 
 const ASSETS = {
@@ -64,6 +65,7 @@ chrome.runtime.onMessage.addListener(
         state.modalContentCache = request.state.modalContentCache
         state.useLoginAddress = request.state.useLoginAddress
         state.curNavLocation = request.state.curNavLocation
+        state.formCache = request.state.formCache
         // console.log('state: '+state)
         console.log('bg useLoginAddress: '+state.useLoginAddress)
 

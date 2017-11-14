@@ -22,6 +22,7 @@ var modalContentCache = ""
 var network = ""
 var useLoginAddress = false
 var address = null
+var formCache = {}
 
 getBackgroundState()
 
@@ -63,6 +64,9 @@ function getBackgroundState () {
     curNavLocation = response.curNavLocation
     console.log('popup curNavLocation: '+curNavLocation)
 
+    formCache = response.formCache
+    console.log('formCache: '+formCache)
+
     if (curNavLocation === 'Home') {
       if(!loggedIn) {
         // document.getElementById("loginNav").innerHTML = 'Login'
@@ -88,7 +92,8 @@ function setBackgroundState () {
     modalContentCache: modalContentCache,
     useLoginAddress: useLoginAddress,
     address: address,
-    curNavLocation: curNavLocation
+    curNavLocation: curNavLocation,
+    formCache: formCache
   }
   chrome.runtime.sendMessage({'msg': 'setState', 'state': state}, function(response) {
     console.log('setting state')
@@ -125,17 +130,36 @@ document.getElementById('sendNav').addEventListener('click', () => {
   else {
     document.getElementById("content").innerHTML = sendHtml
 
+    getBackgroundState()
+
+    // TODO: automate and abstract caching using prototype chains and form field scoping
+    if (formCache) {
+      if (formCache.address) sendAddress.value = formCache.address
+      if (formCache.amount) sendAmount.value = formCache.amount
+      if (formCache.type) sendType.value = formCache.type
+    }
+
+    document.getElementById('sendAddress').addEventListener('change', () => {
+      formCache.address = sendAddress.value
+      console.log('address:'+sendAddress.value)
+      setBackgroundState()
+    })
+
+    document.getElementById('sendAmount').addEventListener('change', () => {
+      formCache.amount = sendAmount.value
+      console.log('amount:'+sendAmount.value)
+      setBackgroundState()
+    })
+
+    document.getElementById('sendType').addEventListener('change', () => {
+      formCache.amount = sendType.value
+      console.log('type:'+sendType.value)
+      setBackgroundState()
+    })
+
     document.getElementById('sendButton').addEventListener('click', () => {
-      var address = document.getElementById("sendAddress").value
-      console.log('address:'+address)
 
-      var amount = document.getElementById("sendAmount").value
-      console.log('amount:'+amount)
-
-      var type = document.getElementById("sendType").value
-      console.log('type:'+type)
-
-      var tx = {'address': address, 'amount': amount, 'type': type }
+      var tx = {'address': sendAddress.value, 'amount': sendAmount.value, 'type': sendType.value }
 
       chrome.runtime.sendMessage({'msg': 'send', 'tx': tx}, function(response) {
         if(response.error) {
@@ -149,6 +173,10 @@ document.getElementById('sendNav').addEventListener('click', () => {
           // document.getElementById("modalContent").innerHTML = "<ul>" + content + "</ul>"
         }
       })
+      formCache = {}
+      sendAddress.value = ''
+      sendAmount.value = ''
+      sendType.value = 'Neo'
     })
   }
 })
@@ -162,23 +190,45 @@ document.getElementById('testInvokeNav').addEventListener('click', () => {
   else {
     document.getElementById("content").innerHTML = testInvokeContractHtml
 
-    document.getElementById('invokeContractButton').addEventListener('click', () => {
-      var operation = document.getElementById("operation").value
-      console.log('operation:'+operation)
+    getBackgroundState()
 
-      var arg1 = document.getElementById("arg1").value
-      console.log('arg1:'+arg1)
+    // TODO: automate and abstract caching using prototype chains and form field scoping
+    if (formCache) {
+      if (formCache.operation) operation.value = formCache.operation
+      if (formCache.arg1) arg1.value = formCache.arg1
+      if (formCache.arg2) arg2.value = formCache.arg2
+      if (formCache.scriptHash) scriptHash.value = formCache.scriptHash
+    }
 
-      var arg2 = document.getElementById("arg2").value
-      console.log('arg2:'+arg2)
+    document.getElementById('operation').addEventListener('change', () => {
+      formCache.operation = operation.value
+      console.log('operation:'+operation.value)
+      setBackgroundState()
+    })
 
-      var args = [arg1, arg2]
-      console.log('args:'+arg2)
+    document.getElementById('arg1').addEventListener('change', () => {
+      formCache.arg1 = arg1.value
+      console.log('arg1:'+arg1.value)
+      setBackgroundState()
+    })
 
-      var scriptHash = document.getElementById("scriptHash").value
-      console.log('scriptHash:'+scriptHash)
+    document.getElementById('arg2').addEventListener('change', () => {
+      formCache.arg2 = arg2.value
+      console.log('arg2:'+arg2.value)
+      setBackgroundState()
+    })
 
-      var tx = { 'operation': operation, 'args': args, 'scriptHash': scriptHash }
+    document.getElementById('scriptHash').addEventListener('change', () => {
+      formCache.scriptHash = scriptHash.value
+      console.log('scriptHash:'+scriptHash.value)
+      setBackgroundState()
+    })
+
+    document.getElementById('testInvokeContractButton').addEventListener('click', () => {
+      var args = [arg1.value, arg2.value]
+      console.log('args:'+args)
+
+      var tx = { 'operation': operation.value, 'args': args, 'scriptHash': scriptHash.value }
 
       chrome.runtime.sendMessage({'msg': 'testInvoke', 'tx': tx}, function(response) {
         if(response.error) {
@@ -192,6 +242,11 @@ document.getElementById('testInvokeNav').addEventListener('click', () => {
           // document.getElementById("modalContent").innerHTML = "<ul>" + content + "</ul>"
         }
       })
+      formCache = {}
+      operation.value = ''
+      arg1.value = ''
+      arg2.value = ''
+      scriptHash.value = ''
     })
   }
 })
@@ -205,29 +260,59 @@ document.getElementById('sendInvokeNav').addEventListener('click', () => {
   else {
     document.getElementById("content").innerHTML = sendInvokeContractHtml
 
+    getBackgroundState()
+
+    // TODO: automate and abstract caching using prototype chains and form field scoping
+    if (formCache) {
+      if (formCache.operation) operation.value = formCache.operation
+      if (formCache.arg1) arg1.value = formCache.arg1
+      if (formCache.arg2) arg2.value = formCache.arg2
+      if (formCache.scriptHash) scriptHash.value = formCache.scriptHash
+      if (formCache.amount) sendAmount.value = formCache.amount
+      if (formCache.type) assetType.value = formCache.type
+    }
+
+    document.getElementById('operation').addEventListener('change', () => {
+      formCache.operation = operation.value
+      console.log('operation:'+operation.value)
+      setBackgroundState()
+    })
+
+    document.getElementById('arg1').addEventListener('change', () => {
+      formCache.arg1 = arg1.value
+      console.log('arg1:'+arg1.value)
+      setBackgroundState()
+    })
+
+    document.getElementById('arg2').addEventListener('change', () => {
+      formCache.arg2 = arg2.value
+      console.log('arg2:'+arg2.value)
+      setBackgroundState()
+    })
+
+    document.getElementById('scriptHash').addEventListener('change', () => {
+      formCache.scriptHash = scriptHash.value
+      console.log('scriptHash:'+scriptHash.value)
+      setBackgroundState()
+    })
+
+    document.getElementById('sendAmount').addEventListener('change', () => {
+      formCache.amount = sendAmount.value
+      console.log('amount:'+sendAmount.value)
+      setBackgroundState()
+    })
+
+    document.getElementById('assetType').addEventListener('change', () => {
+      formCache.amount = assetType.value
+      console.log('type:'+assetType.value)
+      setBackgroundState()
+    })
+
     document.getElementById('invokeContractButton').addEventListener('click', () => {
-      var operation = document.getElementById("operation").value
-      console.log('operation:'+operation)
+      var args = [arg1.value, arg2.value]
+      console.log('args:'+args)
 
-      var arg1 = document.getElementById("arg1").value
-      console.log('arg1:'+arg1)
-
-      var arg2 = document.getElementById("arg2").value
-      console.log('arg2:'+arg2)
-
-      var args = [arg1, arg2]
-      console.log('args:'+arg2)
-
-      var scriptHash = document.getElementById("scriptHash").value
-      console.log('scriptHash:'+scriptHash)
-
-      var amount = document.getElementById("sendAmount").value
-      console.log('amount:'+amount)
-
-      var type = document.getElementById("assetType").value
-      console.log('type:'+type)
-
-      var tx = {'operation': operation, 'args': args, 'scriptHash': scriptHash, 'amount': amount, 'type': type }
+      var tx = {'operation': operation.value, 'args': args, 'scriptHash': scriptHash.value, 'amount': sendAmount.value, 'type': assetType.value }
 
       chrome.runtime.sendMessage({'msg': 'sendInvoke', 'tx': tx}, function(response) {
         if(response.error) {
@@ -238,9 +323,15 @@ document.getElementById('sendInvokeNav').addEventListener('click', () => {
 
           var content = response.msg
           document.getElementById('modalContent').innerHTML = content
-          // document.getElementById("modalContent").innerHTML = "<ul>" + content + "</ul>"
         }
       })
+      formCache = {}
+      operation.value = ''
+      arg1.value = ''
+      arg2.value = ''
+      scriptHash.value = ''
+      sendAmount.value = ''
+      assetType.value = ''
     })
   }
 })
