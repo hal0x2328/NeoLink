@@ -15,7 +15,11 @@ var state = {
   useLoginAddress: false,
   address: null,
   curNavLocation: 'Home',
-  formCache: {}
+  formCache: {},
+  auth: {
+    pending: false,
+    queue: []
+  }
 }
 
 const ASSETS = {
@@ -95,11 +99,33 @@ chrome.runtime.onMessage.addListener(
         }, request.tx)
         break;
       case "sendInvoke": // NOTE: DOES require extension is logged in
-        if (!state.loggedIn) respond({'msg': 'Please login'}, sender)
+        if (!state.loggedIn) respond({'msg': 'Please login to NeoLink', 'loggedIn': state.loggedIn, 'extensionInstalled': true}, sender, sendResponse)
         else {
-          sendInvokeContract((e, res, tx) => {
-            respond({'msg': res, 'error': e}, sender)
-          }, request.tx)
+          if (sender.tab) { // called from dapp so lets queue for authorization by user in extension
+            console.log('received auth request from dapp, queuing for auth')
+
+            state.auth.pending = true
+            state.auth.queue.push({ 'func': 'sendInvoke', 'arg': request.tx })
+            respond({'msg': 'Please open NeoLink to authorize transaction', 'loggedIn': state.loggedIn, 'extensionInstalled': true}, sender, sendResponse)
+            // window.open('popup.html')
+          } else if (state.auth.pending) {
+            console.log('received authorization result from user')
+
+            state.auth.pending = false
+            var q = state.auth.queue.pop()
+
+            if (request.authorized) { // authorized, so get the arg off the queue and run it
+              sendInvokeContract((e, res, tx) => {
+                respond({'msg': res, 'error': e}, sender, sendResponse)
+              }, q.arg)
+            } else { // user rejected transaction so notify dapp
+              respond({'msg': 'Transaction rejected by user', 'loggedIn': state.loggedIn, 'extensionInstalled': true}, sender, sendResponse)
+            }
+          } else {
+            sendInvokeContract((e, res, tx) => {
+              respond({'msg': res, 'error': e}, sender, sendResponse)
+            }, request.tx)
+          }
         }
         break;
       case "claim":
@@ -119,7 +145,7 @@ chrome.runtime.onMessage.addListener(
     return true
 })
 
-function respond (response, sender) {
+function respond (response, sender, sendResponse) {
   if (sender.tab) { // we are talking to the content script
     console.log('bg sending to content tab')
     chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {

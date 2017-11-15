@@ -18,6 +18,14 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
     result = request.msg
     console.log('content received from bg msg: '+request.msg)
   }
+  if (request.loggedIn) {
+    console.log('user is logged in: '+request.loggedIn)
+    loggedIn = request.loggedIn
+  }
+  if (request.extensionInstalled) {
+    extensionInstalled = request.extensionInstalled
+    console.log('extension installed: '+request.extensionInstalled)
+  }
   var extState = {
     loggedIn: loggedIn,
     extensionInstalled: extensionInstalled,

@@ -14,6 +14,7 @@ import * as createWalletHtml from "../html/createWallet.html"
 import * as importWalletHtml from "../html/importWallet.html"
 import * as exportWalletHtml from "../html/exportWallet.html"
 import * as configHtml from "../html/config.html"
+import * as authHtml from "../html/authorize.html"
 
 var curNavHtml = mainNav
 var curNavLocation = 'Home'
@@ -23,6 +24,8 @@ var network = ""
 var useLoginAddress = false
 var address = null
 var formCache = {}
+var authPending = false
+var authQueue = []
 
 getBackgroundState()
 
@@ -35,12 +38,15 @@ if(!loggedIn) {
     document.getElementById("content").innerHTML = loginHtml
     addLoginButtonEvent()
 } else {
-    // document.getElementById("loginNav").innerHTML = 'Log Out'
-    document.getElementById("content").innerHTML = loggedInHtml
-    document.getElementById("loginModalContent").innerHTML = modalContentCache
-    addLogoutButtonEvent()
+    if (!authPending) {
+      // document.getElementById("loginNav").innerHTML = 'Log Out'
+      document.getElementById("content").innerHTML = loggedInHtml
+      document.getElementById("loginModalContent").innerHTML = modalContentCache
+      addLogoutButtonEvent()
+    } else {
+      document.getElementById("content").innerHTML = authHtml
+    }
 }
-
 
 function getBackgroundState () {
   chrome.runtime.sendMessage({'msg': 'getState'}, function(response) {
@@ -67,16 +73,53 @@ function getBackgroundState () {
     formCache = response.formCache
     console.log('formCache: '+formCache)
 
+    authPending = response.auth.pending
+    console.log('auth pending: '+authPending)
+
+    authQueue = response.auth.queue
+    console.log('auth queue: '+authQueue)
+
     if (curNavLocation === 'Home') {
       if(!loggedIn) {
         // document.getElementById("loginNav").innerHTML = 'Login'
         document.getElementById("content").innerHTML = loginHtml
         addLoginButtonEvent()
       } else {
-        // document.getElementById("loginNav").innerHTML = 'Log Out'
-        document.getElementById("content").innerHTML = loggedInHtml
-        document.getElementById("loginModalContent").innerHTML = modalContentCache
-        addLogoutButtonEvent()
+        if (!authPending) {
+            // document.getElementById("loginNav").innerHTML = 'Log Out'
+            document.getElementById("content").innerHTML = loggedInHtml
+            document.getElementById("loginModalContent").innerHTML = modalContentCache
+            addLogoutButtonEvent()
+          } else {
+            document.getElementById("content").innerHTML = authHtml
+            document.getElementById('modalContent').innerHTML = util.inspect(authQueue, {depth: null})
+              // var tx = {'operation': operation.value, 'args': args, 'scriptHash': scriptHash.value, 'amount': sendAmount.value, 'type': assetType.value }
+
+            document.getElementById('authYesButton').addEventListener('click', () => {
+              chrome.runtime.sendMessage({'msg': 'sendInvoke', 'authorized': true}, function(response) {
+                if(response.error) {
+                  console.log('error: '+response.error)
+                  document.getElementById("modalContent").innerHTML = '<br>error: ' + response.error
+                } else {
+                  console.log(response.msg)
+                  var content = response.msg
+                  document.getElementById('modalContent').innerHTML = content
+                }
+              })
+            })
+            document.getElementById('authNoButton').addEventListener('click', () => {
+              chrome.runtime.sendMessage({'msg': 'sendInvoke', 'authorized': false}, function(response) {
+                if(response.error) {
+                  console.log('error: '+response.error)
+                  document.getElementById("modalContent").innerHTML = '<br>error: ' + response.error
+                } else {
+                  console.log(response.msg)
+                  var content = response.msg
+                  document.getElementById('modalContent').innerHTML = content
+                }
+              })
+            })
+          }
       }
     } else if (curNavLocation === 'Config') {
       if (useLoginAddress) document.getElementById('configUseLoggedInAddress').checked = true
