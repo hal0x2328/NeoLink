@@ -1,6 +1,10 @@
 
 import util from 'util'
 
+var loggedIn = false
+var extensionInstalled = false
+
+// send a content script notification to the background script to track state
 chrome.runtime.sendMessage({'msg': 'contentInit'}, function(response) {
   if (response.error) {
     console.log('contentInit error: '+response.error)
@@ -8,7 +12,18 @@ chrome.runtime.sendMessage({'msg': 'contentInit'}, function(response) {
     console.log('contentInit response: '+response.msg)
     if (response.loggedIn) {
       console.log('user is logged in: '+response.loggedIn)
+      loggedIn = response.loggedIn
     }
+    if (response.extensionInstalled) {
+      extensionInstalled = response.extensionInstalled
+      console.log('extension installed: '+response.extensionInstalled)
+    }
+    var extState = {
+      loggedIn: loggedIn,
+      extensionInstalled: extensionInstalled
+    }
+    // send message back to api page
+    window.postMessage(extState, "*");
   }
 })
 
@@ -22,23 +37,30 @@ window.addEventListener("message", function(event) {
   if (event.data.type && (event.data.type == "FROM_PAGE")) {
     console.log("Content script received: " + util.inspect(event.data.text, {depth: null}));
     window.postMessage(event.data.text, "*");
-    var key = event.data.text.key;
-    var price = event.data.text.price;
-    var arg = event.data.text.arg;
-    sendInvoke (key, price, arg)
+    // window.postMessage(event.data.text, "*");
+    var extState = {
+      loggedIn: loggedIn,
+      extensionInstalled: extensionInstalled
+    }
+    // send message back to api page
+    event.source.postMessage(extState, "*");
+
+    var scriptHash = event.data.text.scriptHash;
+    var operation = event.data.text.operation;
+    var assetType = event.data.text.assetType;
+    var assetAmount = event.data.text.assetAmount;
+    var arg1 = event.data.text.arg1;
+    var arg2 = event.data.text.arg2;
+
+    // send an invoke to the extension background page
+    sendInvoke (scriptHash, operation, arg1, arg2, assetType, assetAmount)
   }
 }, false);
 
+function testInvoke (scriptHash, operation, arg1, arg2, assetType, assetAmount ) {
+  var args = [arg1, arg2]
 
-
-function testInvoke (key, price, arg) {
-  // for test invoke
-  // var tx = {'operation': 'getprice', 'args': 'test', 'scriptHash': 'b3a14d99a3fb6646c78bf2f4e2f25a7964d2956a'}
-  // for send invoke
-
- var args = [key, arg]
-
-  var tx = {'operation': 'putvalue', 'args': args, 'scriptHash': 'b3a14d99a3fb6646c78bf2f4e2f25a7964d2956a', 'amount': price, 'type': 'GAS' }
+  var tx = {'operation': operation, 'args': args, 'scriptHash': scriptHash, 'amount': assetAmount, 'type': assetType }
 
   // test invoke contract
   chrome.runtime.sendMessage({'msg': 'testInvoke', 'tx': tx}, function(response) {
@@ -46,31 +68,26 @@ function testInvoke (key, price, arg) {
       console.log('contentInit error: '+response.error)
     } else {
       console.log('contentInit response: '+response.msg)
-      // if (response.loggedIn) {
-      //   console.log('user is logged in: '+response.loggedIn)
-      // }
+      // TODO: send invoke result to page
+      
     }
   })
 }
 
-function sendInvoke (key, price, arg) {
+function sendInvoke (scriptHash, operation, arg1, arg2, assetType, assetAmount) {
   console.log('invoking contract from content script')
-  // for test invoke
-  // var tx = {'operation': 'getprice', 'args': 'test', 'scriptHash': 'b3a14d99a3fb6646c78bf2f4e2f25a7964d2956a'}
-  // for send invoke
-  var args = [key, arg]
+  var args = [arg1, arg2]
 
-   var tx = {'operation': 'putvalue', 'args': args, 'scriptHash': 'b3a14d99a3fb6646c78bf2f4e2f25a7964d2956a', 'amount': price, 'type': 'GAS' }
+  //  var tx = {'operation': 'putvalue', 'args': args, 'scriptHash': 'b3a14d99a3fb6646c78bf2f4e2f25a7964d2956a', 'amount': price, 'type': 'GAS' }
+  var tx = {'operation': operation, 'args': args, 'scriptHash': scriptHash, 'amount': assetAmount, 'type': assetType }
 
-  // test invoke contract
+  // send invoke contract
   chrome.runtime.sendMessage({'msg': 'sendInvoke', 'tx': tx}, function(response) {
     if (response.error) {
       console.log('contentInit error: '+response.error)
     } else {
       console.log('contentInit response: '+response.msg)
-      // if (response.loggedIn) {
-      //   console.log('user is logged in: '+response.loggedIn)
-      // }
+      // TODO: send invoke result to page
     }
   })
 }

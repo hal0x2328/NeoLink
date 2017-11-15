@@ -54,7 +54,7 @@ chrome.runtime.onMessage.addListener(
     switch(request.msg)
     {
       case "contentInit":
-        sendResponse({'msg': 'extension is online', 'loggedIn': state.loggedIn})
+        sendResponse({'msg': 'extension is online', 'loggedIn': state.loggedIn, 'extensionInstalled': true})
       break;
       case "getState":
         // sendResponse({'loggedIn': state.loggedIn, 'modalContentCache': state.modalContentCache})
