@@ -7,13 +7,24 @@ var extensionInstalled = false
 // var port = chrome.runtime.connect();
 
 // listen for messages that are the results of invocations sent from the dapp through the content script
+// these come from the background script in the extension
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
+  var result = ''
   if(request.error) {
     console.log('content received from bg error: '+request.error)
     // document.getElementById("modalContent").innerHTML = '<br>error: ' + response.error
+    result = request.error
   } else {
+    result = request.msg
     console.log('content received from bg msg: '+request.msg)
   }
+  var extState = {
+    loggedIn: loggedIn,
+    extensionInstalled: extensionInstalled,
+    result: result
+  }
+  // send message back to api page
+  window.postMessage(extState, "*");
 })
 
 // send a content script notification to the background script to track state

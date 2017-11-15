@@ -95,18 +95,12 @@ chrome.runtime.onMessage.addListener(
         }, request.tx)
         break;
       case "sendInvoke": // NOTE: DOES require extension is logged in
-        sendInvokeContract((e, res, tx) => {
-          if (sender.tab) { // we are talking to the content script
-            console.log('bg sending to content tab')
-            chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-              chrome.tabs.sendMessage(tabs[0].id, {'msg': res, 'error': e}, function(response) {
-                  // console.log('bg content response: '+util.inspect(response, {depth:null}))
-              })
-            })
-          }
-          else // we are talking to the core extension
-            sendResponse({'msg': res, 'error': e})
-        }, request.tx)
+        if (!state.loggedIn) respond({'msg': 'Please login'}, sender)
+        else {
+          sendInvokeContract((e, res, tx) => {
+            respond({'msg': res, 'error': e}, sender)
+          }, request.tx)
+        }
         break;
       case "claim":
         break;
@@ -124,6 +118,19 @@ chrome.runtime.onMessage.addListener(
     console.log('logged in: '+state.loggedIn)
     return true
 })
+
+function respond (response, sender) {
+  if (sender.tab) { // we are talking to the content script
+    console.log('bg sending to content tab')
+    chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+      chrome.tabs.sendMessage(tabs[0].id, response, function(response) {
+          // console.log('bg content response: '+util.inspect(response, {depth:null}))
+      })
+    })
+  } else { // we are talking to the core extension
+    sendResponse(response)
+  }
+}
 
 function getTransactionHistory (callback, address) {
   neon.getTransactionHistory(state.network, address)
