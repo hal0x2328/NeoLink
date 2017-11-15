@@ -1,10 +1,23 @@
-
+// this gets injected into all pages currently
 import util from 'util'
 
 var loggedIn = false
 var extensionInstalled = false
 
+// var port = chrome.runtime.connect();
+
+// listen for messages that are the results of invocations sent from the dapp through the content script
+chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
+  if(request.error) {
+    console.log('content received from bg error: '+request.error)
+    // document.getElementById("modalContent").innerHTML = '<br>error: ' + response.error
+  } else {
+    console.log('content received from bg msg: '+request.msg)
+  }
+})
+
 // send a content script notification to the background script to track state
+// on content initialization
 chrome.runtime.sendMessage({'msg': 'contentInit'}, function(response) {
   if (response.error) {
     console.log('contentInit error: '+response.error)
@@ -27,8 +40,7 @@ chrome.runtime.sendMessage({'msg': 'contentInit'}, function(response) {
   }
 })
 
-// var port = chrome.runtime.connect();
-
+// listen for messages from the page to do invocations
 window.addEventListener("message", function(event) {
   // We only accept messages from ourselves
   if (event.source != window)
@@ -36,14 +48,14 @@ window.addEventListener("message", function(event) {
 
   if (event.data.type && (event.data.type == "FROM_PAGE")) {
     console.log("Content script received: " + util.inspect(event.data.text, {depth: null}));
-    window.postMessage(event.data.text, "*");
+    // window.postMessage(event.data.text, "*");
     // window.postMessage(event.data.text, "*");
     var extState = {
       loggedIn: loggedIn,
       extensionInstalled: extensionInstalled
     }
     // send message back to api page
-    event.source.postMessage(extState, "*");
+    // window.postMessage(extState, "*");
 
     var scriptHash = event.data.text.scriptHash;
     var operation = event.data.text.operation;
@@ -55,7 +67,7 @@ window.addEventListener("message", function(event) {
     // send an invoke to the extension background page
     sendInvoke (scriptHash, operation, arg1, arg2, assetType, assetAmount)
   }
-}, false);
+})
 
 function testInvoke (scriptHash, operation, arg1, arg2, assetType, assetAmount ) {
   var args = [arg1, arg2]
@@ -65,11 +77,12 @@ function testInvoke (scriptHash, operation, arg1, arg2, assetType, assetAmount )
   // test invoke contract
   chrome.runtime.sendMessage({'msg': 'testInvoke', 'tx': tx}, function(response) {
     if (response.error) {
-      console.log('contentInit error: '+response.error)
+      console.log('contentInit testInvoke error: '+response.error)
+      window.postMessage(response.error, "*")
     } else {
-      console.log('contentInit response: '+response.msg)
+      console.log('contentInit testInvoke response: '+response.msg)
       // TODO: send invoke result to page
-      
+      window.postMessage(response.msg, "*");
     }
   })
 }
@@ -83,11 +96,16 @@ function sendInvoke (scriptHash, operation, arg1, arg2, assetType, assetAmount) 
 
   // send invoke contract
   chrome.runtime.sendMessage({'msg': 'sendInvoke', 'tx': tx}, function(response) {
-    if (response.error) {
-      console.log('contentInit error: '+response.error)
-    } else {
-      console.log('contentInit response: '+response.msg)
+    if (response && response.error) {
+      console.log('contentInit sendInvoke error: '+response.error)
+      window.postMessage(response.error, "*");
+
+    } else if (response && response.msg){
+      console.log('contentInit sendInvoke response: '+response.msg)
       // TODO: send invoke result to page
+      window.postMessage(response.msg, "*");
+    } else {
+      console.log('content sendInvoke unexpected error')
     }
   })
 }

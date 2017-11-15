@@ -51,7 +51,7 @@ chrome.runtime.onMessage.addListener(
     console.log('logged in: '+state.loggedIn)
     console.log('bg onMessage: '+request.msg)
 
-    switch(request.msg)
+    switch (request.msg)
     {
       case "contentInit":
         sendResponse({'msg': 'extension is online', 'loggedIn': state.loggedIn, 'extensionInstalled': true})
@@ -96,7 +96,16 @@ chrome.runtime.onMessage.addListener(
         break;
       case "sendInvoke": // NOTE: DOES require extension is logged in
         sendInvokeContract((e, res, tx) => {
-          sendResponse({'msg': res, 'error': e})
+          if (sender.tab) { // we are talking to the content script
+            console.log('bg sending to content tab')
+            chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+              chrome.tabs.sendMessage(tabs[0].id, {'msg': res, 'error': e}, function(response) {
+                  // console.log('bg content response: '+util.inspect(response, {depth:null}))
+              })
+            })
+          }
+          else // we are talking to the core extension
+            sendResponse({'msg': res, 'error': e})
         }, request.tx)
         break;
       case "claim":
@@ -183,7 +192,7 @@ function send (callback, tx) {
 }
 
 
-function String2Hex(tmp) {
+function String2Hex (tmp) {
     var str = '';
     for(var i = 0; i < tmp.length; i++) {
         str += tmp[i].charCodeAt(0).toString(16);
@@ -191,7 +200,7 @@ function String2Hex(tmp) {
     return str;
 }
 
-function testInvokeContract(callback, tx) {
+function testInvokeContract (callback, tx) {
   const assetType = tx.type === ASSETS_LABELS.NEO ? ASSETS.NEO : ASSETS.GAS
   console.log('test invoking contract')
   var gasCost = 0.001
@@ -235,7 +244,7 @@ function testInvokeContract(callback, tx) {
     })
 }
 
-function sendInvokeContract(callback, tx) {
+function sendInvokeContract (callback, tx) {
   const assetType = tx.type === ASSETS_LABELS.NEO ? ASSETS.NEO : ASSETS.GAS
   console.log('invoking contract')
   var gasCost = 0.001
